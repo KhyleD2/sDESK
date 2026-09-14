@@ -26,6 +26,11 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [RegisterController::class, 'register']);
 });
 
+// 2FA routes (not protected by auth middleware since user is temporarily logged out)
+Route::get('/2fa/verify', [LoginController::class, 'showTwoFactorForm'])->name('2fa.verify');
+Route::post('/2fa/verify', [LoginController::class, 'verifyTwoFactor']);
+Route::post('/2fa/resend', [LoginController::class, 'resendTwoFactorCode'])->name('2fa.resend');
+
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
 
 // Protected routes

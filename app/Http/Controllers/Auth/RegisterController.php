@@ -21,8 +21,16 @@ class RegisterController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'password' => [
+                'required',
+                'confirmed',
+                'min:8',
+                'regex:/^(?=.*[!@#$%^&*(),.?":{}|<>]).*$/', // At least 1 special character
+            ],
             'role' => ['nullable', 'in:user,analyst,admin'],
+        ], [
+            'password.min' => 'Password must be at least 8 characters long.',
+            'password.regex' => 'Password must contain at least one special character (!@#$%^&*(),.?":{}|<>).',
         ]);
 
         $user = User::create([

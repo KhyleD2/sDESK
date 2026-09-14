@@ -650,6 +650,9 @@
                             <i class="fas fa-eye" id="pwIcon1"></i>
                         </button>
                     </div>
+                    <div style="font-size: 11px; color: var(--text-dim); margin-top: 6px; line-height: 1.4;">
+                        <i class="fas fa-info-circle"></i> Must be at least 8 characters with one special character (!@#$%^&*...)
+                    </div>
                     @error('password')
                         <span class="field-error"><i class="fas fa-exclamation-circle"></i> {{ $message }}</span>
                     @enderror
