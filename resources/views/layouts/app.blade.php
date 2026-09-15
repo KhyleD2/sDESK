@@ -753,6 +753,9 @@
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">SYSTEM</div>
                     <ul class="sidebar-nav">
+                        <li><a href="{{ route('admin.login-logs') }}" class="{{ request()->routeIs('admin.login-logs') ? 'active' : '' }}">
+                            <i class="fas fa-shield-alt sidebar-nav-icon"></i> Login Logs
+                        </a></li>
                         <li><a href="{{ route('admin.settings') }}" class="{{ request()->routeIs('admin.settings') ? 'active' : '' }}">
                             <i class="fas fa-cog sidebar-nav-icon"></i> Settings
                         </a></li>

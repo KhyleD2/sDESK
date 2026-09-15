@@ -227,6 +227,31 @@
             box-shadow: 0 0 0 3px var(--cyan-dim);
         }
 
+        .trust-device-option {
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .trust-device-option label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-dim);
+        }
+
+        .trust-device-option input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--cyan);
+        }
+
+        .trust-device-option span {
+            user-select: none;
+        }
+
         .btn-primary {
             width: 100%;
             padding: 14px 24px;
@@ -325,6 +350,13 @@
             <input type="text" maxlength="1" class="code-digit" id="digit4" autocomplete="off">
             <input type="text" maxlength="1" class="code-digit" id="digit5" autocomplete="off">
             <input type="text" maxlength="1" class="code-digit" id="digit6" autocomplete="off">
+        </div>
+
+        <div class="trust-device-option">
+            <label>
+                <input type="checkbox" name="trust_device" value="1" id="trustDevice">
+                <span>Trust this device for 30 days</span>
+            </label>
         </div>
 
         <button type="submit" class="btn-primary">Verify & Login</button>

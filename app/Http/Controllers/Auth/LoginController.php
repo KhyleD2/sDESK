@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Mail\TwoFactorCodeMail;
+use App\Models\LoginLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -23,8 +24,49 @@ class LoginController extends Controller
             'password' => ['required'],
         ]);
 
+        // Check if user exists
+        $user = \App\Models\User::where('email', $credentials['email'])->first();
+
+        // Check if user is blocked by admin
+        if ($user && $user->is_blocked) {
+            $this->logLoginAttempt($user->id, $credentials['email'], $request, 'failed', 'Account blocked by administrator');
+            return back()->withErrors([
+                'email' => 'Your account has been blocked. Please contact the administrator.',
+            ])->onlyInput('email');
+        }
+
+        // Check if user is temporarily locked due to failed attempts
+        if ($user && $user->locked_until && $user->locked_until > now()) {
+            $minutesLeft = now()->diffInMinutes($user->locked_until);
+            $this->logLoginAttempt($user->id, $credentials['email'], $request, 'failed', 'Account temporarily locked');
+            return back()->withErrors([
+                'email' => "Too many failed login attempts. Account locked for {$minutesLeft} more minute(s).",
+            ])->onlyInput('email');
+        }
+
+        // Reset lockout if time has passed
+        if ($user && $user->locked_until && $user->locked_until <= now()) {
+            $user->failed_login_attempts = 0;
+            $user->locked_until = null;
+            $user->save();
+        }
+
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $user = Auth::user();
+            
+            // Reset failed attempts on successful login
+            $user->failed_login_attempts = 0;
+            $user->locked_until = null;
+            $user->save();
+            
+            // Check if device is trusted
+            $deviceToken = $request->cookie('trusted_device');
+            if ($deviceToken && $user->trusted_device_token === $deviceToken && $user->trusted_device_expires_at > now()) {
+                // Device is trusted, skip 2FA
+                $this->logLoginAttempt($user->id, $user->email, $request, 'success');
+                $request->session()->regenerate();
+                return redirect()->intended(route('dashboard'))->with('success', 'Welcome back!');
+            }
             
             // Generate 6-digit 2FA code
             $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
@@ -37,19 +79,59 @@ class LoginController extends Controller
             // Send email
             Mail::to($user->email)->send(new TwoFactorCodeMail($code, $user->name));
             
+            // Log successful password verification (2FA pending)
+            $this->logLoginAttempt($user->id, $user->email, $request, 'success', '2FA code sent');
+            
             // Log out temporarily until 2FA is verified
             Auth::logout();
             
             // Store email in session for 2FA verification
             $request->session()->put('2fa_email', $user->email);
             $request->session()->put('2fa_remember', $request->boolean('remember'));
+            $request->session()->save(); // Force save session
             
             return redirect()->route('2fa.verify')->with('success', 'A 6-digit verification code has been sent to your email.');
         }
 
+        // Failed login attempt
+        if ($user) {
+            $user->failed_login_attempts += 1;
+            
+            // Lock account after 5 failed attempts for 15 minutes
+            if ($user->failed_login_attempts >= 5) {
+                $user->locked_until = now()->addMinutes(15);
+                $user->save();
+                $this->logLoginAttempt($user->id, $credentials['email'], $request, 'failed', 'Invalid credentials - Account locked after 5 attempts');
+                return back()->withErrors([
+                    'email' => 'Too many failed login attempts. Your account has been locked for 15 minutes.',
+                ])->onlyInput('email');
+            }
+            
+            $user->save();
+            $attemptsLeft = 5 - $user->failed_login_attempts;
+            $this->logLoginAttempt($user->id, $credentials['email'], $request, 'failed', 'Invalid credentials');
+            return back()->withErrors([
+                'email' => "Invalid credentials. {$attemptsLeft} attempt(s) remaining before lockout.",
+            ])->onlyInput('email');
+        }
+
+        // User not found
+        $this->logLoginAttempt(null, $credentials['email'], $request, 'failed', 'User not found');
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
         ])->onlyInput('email');
+    }
+
+    protected function logLoginAttempt($userId, $email, $request, $status, $failureReason = null)
+    {
+        LoginLog::create([
+            'user_id' => $userId,
+            'email' => $email,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'status' => $status,
+            'failure_reason' => $failureReason,
+        ]);
     }
 
     public function showTwoFactorForm()
@@ -91,6 +173,19 @@ class LoginController extends Controller
         // Clear 2FA code
         $user->two_factor_code = null;
         $user->two_factor_expires_at = null;
+        
+        // Handle "Trust this device" option
+        $response = redirect()->intended(route('dashboard'))->with('success', 'Login successful!');
+        
+        if ($request->boolean('trust_device')) {
+            $deviceToken = Str::random(60);
+            $user->trusted_device_token = $deviceToken;
+            $user->trusted_device_expires_at = now()->addDays(30);
+            
+            // Set cookie for 30 days
+            $response->cookie('trusted_device', $deviceToken, 60 * 24 * 30, '/', null, false, true);
+        }
+        
         $user->save();
 
         // Log the user in
@@ -100,7 +195,7 @@ class LoginController extends Controller
         $request->session()->forget(['2fa_email', '2fa_remember']);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard'))->with('success', 'Login successful!');
+        return $response;
     }
 
     public function resendTwoFactorCode(Request $request)

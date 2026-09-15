@@ -110,6 +110,11 @@ Route::middleware('auth')->group(function () {
         Route::delete('/settings/categories/{category}', [\App\Http\Controllers\Admin\SettingsController::class, 'deleteCategory'])->name('settings.categories.delete');
         Route::post('/settings/account', [\App\Http\Controllers\Admin\SettingsController::class, 'updateAccount'])->name('settings.account.update');
         
+        // Login Logs
+        Route::get('/login-logs', [\App\Http\Controllers\Admin\LoginLogsController::class, 'index'])->name('login-logs');
+        Route::post('/login-logs/block/{user}', [\App\Http\Controllers\Admin\LoginLogsController::class, 'blockUser'])->name('login-logs.block');
+        Route::post('/login-logs/unblock/{user}', [\App\Http\Controllers\Admin\LoginLogsController::class, 'unblockUser'])->name('login-logs.unblock');
+        
         // Known Threats Management (Full CRUD for admins)
         Route::post('/known-threats', [KnownThreatController::class, 'store'])->name('known-threats.store');
         Route::delete('/known-threats/{knownThreat}', [KnownThreatController::class, 'destroy'])->name('known-threats.destroy');
