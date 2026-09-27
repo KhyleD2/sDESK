@@ -68,7 +68,7 @@ class NotificationController extends Controller
                     'is_read' => $notification->is_read,
                     'created_at' => $notification->created_at->diffForHumans(),
                     'report_id' => $notification->report_id,
-                    'report_url' => $notification->report_id ? route('analyst.report-queue.show', $notification->report_id) : null,
+                    'report_url' => $notification->report_id ? route('reports.show', $notification->report_id) : null,
                 ];
             });
 

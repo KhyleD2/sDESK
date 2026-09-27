@@ -71,10 +71,12 @@
         font-weight: 400;
         width: 100%;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        color-scheme: dark; /* Makes calendar icon gray/visible in dark mode */
     }
     
     [data-theme="light"] .filter-input {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        color-scheme: light;
     }
     
     .filter-input::placeholder {

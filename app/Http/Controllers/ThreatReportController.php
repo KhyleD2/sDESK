@@ -279,19 +279,27 @@ class ThreatReportController extends Controller
 
     public function destroy(ThreatReport $report)
     {
-        // Only admins can delete
-        if (!Auth::user()->isAdmin()) {
-            abort(403, 'Only admins can delete reports.');
+        $user = Auth::user();
+
+        // Users can only archive their own reports, admins/analysts can archive any
+        if (!$user->isAdmin() && !$user->isAnalyst() && $report->user_id !== $user->id) {
+            abort(403, 'You can only remove your own reports.');
         }
 
-        // Delete associated files
-        foreach ($report->attachments as $attachment) {
-            Storage::disk('local')->delete($attachment->storage_path);
-        }
+        // Soft delete (archive) the report
+        $report->archived_by = $user->name . ' (' . $user->role . ')';
+        $report->archive_reason = $user->isUser() ? 'User removed report' : 'Archived by ' . $user->role;
+        $report->save();
+        $report->delete(); // Soft delete
 
-        $report->delete();
+        // Log activity
+        ActivityLog::create([
+            'report_id' => $report->id,
+            'user_id' => $user->id,
+            'action_description' => 'Report archived/removed by ' . $user->name,
+        ]);
 
         return redirect()->route('reports.index')
-            ->with('success', 'Report deleted successfully!');
+            ->with('success', 'Report has been archived successfully.');
     }
 }

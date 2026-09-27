@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'profile_picture',
         'two_factor_code',
         'two_factor_expires_at',
     ];

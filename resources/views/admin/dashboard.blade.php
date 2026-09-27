@@ -434,7 +434,7 @@
     
     @if($recentActivity->count() > 0)
         <div class="activity-list">
-            @foreach($recentActivity->take(8) as $activity)
+            @foreach($recentActivity->take(5) as $activity)
             <div class="activity-item">
                 <div class="activity-dot {{ 
                     str_contains(strtolower($activity->action_description), 'created') || str_contains(strtolower($activity->action_description), 'submitted') ? 'dot-create' : 
@@ -461,6 +461,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Get current theme
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    
     // Users Bar Chart
     const usersData = {
         users: {{ $usersByRole['user'] ?? 0 }},
@@ -495,7 +498,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         beginAtZero: true,
                         min: 0,
                         ticks: {
-                            color: '#7C8698',
+                            color: isDark ? '#7C8698' : '#6B7280',
                             font: {
                                 family: "'IBM Plex Mono', monospace",
                                 size: 11
@@ -504,7 +507,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             precision: 0
                         },
                         grid: {
-                            color: '#1A2029',
+                            color: isDark ? '#1A2029' : '#E5E7EB',
                             drawBorder: false,
                             lineWidth: 1
                         },
@@ -512,7 +515,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     x: {
                         ticks: {
-                            color: '#7C8698',
+                            color: isDark ? '#7C8698' : '#6B7280',
                             font: {
                                 family: "'IBM Plex Mono', monospace",
                                 size: 11,
@@ -526,10 +529,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: 'rgba(19, 24, 34, 0.95)',
-                        titleColor: '#E7EBF2',
-                        bodyColor: '#7C8698',
-                        borderColor: '#212836',
+                        backgroundColor: isDark ? 'rgba(19, 24, 34, 0.95)' : 'rgba(0, 0, 0, 0.8)',
+                        titleColor: isDark ? '#E7EBF2' : '#FFFFFF',
+                        bodyColor: isDark ? '#7C8698' : '#E5E7EB',
+                        borderColor: isDark ? '#212836' : '#9CA3AF',
                         borderWidth: 1,
                         padding: 12,
                         displayColors: false,

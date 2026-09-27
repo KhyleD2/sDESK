@@ -31,7 +31,7 @@ class ActivityLogController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $logs = $query->orderBy('created_at', 'desc')->paginate(50)->withQueryString();
+        $logs = $query->orderBy('created_at', 'desc')->paginate(5)->withQueryString();
 
         return view('analyst.activity-logs', compact('logs'));
     }

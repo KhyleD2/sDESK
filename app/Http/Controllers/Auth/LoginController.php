@@ -180,10 +180,10 @@ class LoginController extends Controller
         if ($request->boolean('trust_device')) {
             $deviceToken = Str::random(60);
             $user->trusted_device_token = $deviceToken;
-            $user->trusted_device_expires_at = now()->addDays(30);
+            $user->trusted_device_expires_at = now()->addDays(7);
             
-            // Set cookie for 30 days
-            $response->cookie('trusted_device', $deviceToken, 60 * 24 * 30, '/', null, false, true);
+            // Set cookie for 7 days (minutes * hours * days)
+            $response->withCookie(cookie('trusted_device', $deviceToken, 60 * 24 * 7, '/', null, false, true));
         }
         
         $user->save();

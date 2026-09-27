@@ -334,31 +334,57 @@
     <form method="POST" action="{{ route('reports.store') }}" enctype="multipart/form-data">
         @csrf
 
-        {{-- SECTION: Threat Information --}}
-        <div class="form-section-card">
-            <div class="section-header">
-                <div class="section-title"><i class="fas fa-list-alt"></i> Threat Information</div>
+        {{-- 2-COLUMN GRID LAYOUT --}}
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+            
+            {{-- LEFT COLUMN: Threat Information --}}
+            <div class="form-section-card">
+                <div class="section-header">
+                    <div class="section-title"><i class="fas fa-list-alt"></i> Threat Information</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="category_id" class="form-label">
+                        <i class="fas fa-tag"></i> Threat Category <span class="required">*</span>
+                    </label>
+                    <select id="category_id" name="category_id" required class="form-select">
+                        <option value="">— Select a category —</option>
+                        @foreach($categories as $category)
+                            <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
+                                {{ $category->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('category_id')
+                        <div class="error-message"><i class="fas fa-exclamation-circle"></i> {{ $message }}</div>
+                    @enderror
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="category_id" class="form-label">
-                    <i class="fas fa-tag"></i> Threat Category <span class="required">*</span>
-                </label>
-                <select id="category_id" name="category_id" required class="form-select">
-                    <option value="">— Select a category —</option>
-                    @foreach($categories as $category)
-                        <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
-                            {{ $category->name }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('category_id')
-                    <div class="error-message"><i class="fas fa-exclamation-circle"></i> {{ $message }}</div>
-                @enderror
+            {{-- RIGHT COLUMN: Attachments --}}
+            <div class="form-section-card">
+                <div class="section-header">
+                    <div class="section-title"><i class="fas fa-paperclip"></i> Attachments</div>
+                    <span style="font-size:12px;color:var(--text-faint);font-weight:500;">Optional</span>
+                </div>
+
+                <div class="form-group">
+                    <div class="file-upload-area" onclick="document.getElementById('attachments').click();">
+                        <div class="file-upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                        <div class="file-upload-text">Click to upload files</div>
+                        <div class="file-upload-hint">Screenshots, files, logs · Max 10MB</div>
+                    </div>
+                    <input type="file" id="attachments" name="attachments[]" multiple class="file-input-hidden">
+                    <div class="file-list" id="fileList"></div>
+                    @error('attachments.*')
+                        <div class="error-message"><i class="fas fa-exclamation-circle"></i> {{ $message }}</div>
+                    @enderror
+                </div>
             </div>
+
         </div>
 
-        {{-- SECTION: Report Details --}}
+        {{-- FULL WIDTH: Report Details --}}
         <div class="form-section-card">
             <div class="section-header">
                 <div class="section-title"><i class="fas fa-pen-to-square"></i> Report Details</div>
@@ -372,27 +398,6 @@
                     placeholder="Describe the threat in detail — include URLs, email addresses, timestamps, or any other relevant context (minimum 10 characters)...">{{ old('description') }}</textarea>
                 <span class="form-hint"><i class="fas fa-info-circle"></i> The more detail you provide, the faster our analysts can assess the threat.</span>
                 @error('description')
-                    <div class="error-message"><i class="fas fa-exclamation-circle"></i> {{ $message }}</div>
-                @enderror
-            </div>
-        </div>
-
-        {{-- SECTION: Attachments --}}
-        <div class="form-section-card">
-            <div class="section-header">
-                <div class="section-title"><i class="fas fa-paperclip"></i> Attachments</div>
-                <span style="font-size:12px;color:var(--text-faint);font-weight:500;">Optional</span>
-            </div>
-
-            <div class="form-group">
-                <div class="file-upload-area" onclick="document.getElementById('attachments').click();">
-                    <div class="file-upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
-                    <div class="file-upload-text">Click to upload files</div>
-                    <div class="file-upload-hint">Screenshots, suspicious files, logs, etc. · Max 10MB per file</div>
-                </div>
-                <input type="file" id="attachments" name="attachments[]" multiple class="file-input-hidden">
-                <div class="file-list" id="fileList"></div>
-                @error('attachments.*')
                     <div class="error-message"><i class="fas fa-exclamation-circle"></i> {{ $message }}</div>
                 @enderror
             </div>

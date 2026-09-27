@@ -704,6 +704,9 @@
                         <li><a href="{{ route('reports.index') }}" class="{{ request()->routeIs('reports.index') ? 'active' : '' }}">
                             <i class="fas fa-file-alt sidebar-nav-icon"></i> My Reports
                         </a></li>
+                        <li><a href="{{ route('profile.edit') }}" class="{{ request()->routeIs('profile.*') ? 'active' : '' }}">
+                            <i class="fas fa-user-cog sidebar-nav-icon"></i> Profile Settings
+                        </a></li>
                     </ul>
                 </div>
             @elseif(Auth::user()->isAnalyst())
@@ -722,6 +725,9 @@
                         </a></li>
                         <li><a href="{{ route('analyst.activity-logs') }}" class="{{ request()->routeIs('analyst.activity-logs') ? 'active' : '' }}">
                             <i class="fas fa-history sidebar-nav-icon"></i> Activity Logs
+                        </a></li>
+                        <li><a href="{{ route('profile.edit') }}" class="{{ request()->routeIs('profile.*') ? 'active' : '' }}">
+                            <i class="fas fa-user-cog sidebar-nav-icon"></i> Profile Settings
                         </a></li>
                     </ul>
                 </div>
@@ -756,8 +762,14 @@
                         <li><a href="{{ route('admin.login-logs') }}" class="{{ request()->routeIs('admin.login-logs') ? 'active' : '' }}">
                             <i class="fas fa-shield-alt sidebar-nav-icon"></i> Login Logs
                         </a></li>
+                        <li><a href="{{ route('admin.archives') }}" class="{{ request()->routeIs('admin.archives*') ? 'active' : '' }}">
+                            <i class="fas fa-archive sidebar-nav-icon"></i> Archives
+                        </a></li>
                         <li><a href="{{ route('admin.settings') }}" class="{{ request()->routeIs('admin.settings') ? 'active' : '' }}">
                             <i class="fas fa-cog sidebar-nav-icon"></i> Settings
+                        </a></li>
+                        <li><a href="{{ route('profile.edit') }}" class="{{ request()->routeIs('profile.*') ? 'active' : '' }}">
+                            <i class="fas fa-user-cog sidebar-nav-icon"></i> Profile Settings
                         </a></li>
                     </ul>
                 </div>
@@ -809,7 +821,13 @@
 
                     {{-- Profile chip --}}
                     <div class="topbar-profile">
-                        <div class="topbar-avatar">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</div>
+                        <div class="topbar-avatar">
+                            @if(Auth::user()->profile_picture)
+                                <img src="{{ asset('storage/' . Auth::user()->profile_picture) }}" alt="{{ Auth::user()->name }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                            @else
+                                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                            @endif
+                        </div>
                         <div class="topbar-profile-info">
                             <span class="topbar-profile-name">{{ Auth::user()->name }}</span>
                             <span class="topbar-profile-role">{{ strtoupper(Auth::user()->role) }}</span>

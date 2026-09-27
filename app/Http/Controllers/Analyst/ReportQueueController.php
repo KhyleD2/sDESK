@@ -43,7 +43,7 @@ class ReportQueueController extends Controller
             $query->orderBy($sortBy, $sortDirection);
         }
 
-        $reports = $query->paginate(20)->withQueryString();
+        $reports = $query->paginate(10)->withQueryString();
 
         return view('analyst.report-queue', compact('reports'));
     }
@@ -68,7 +68,8 @@ class ReportQueueController extends Controller
             'category',
             'attachments',
             'actions.assignedUser',
-            'activityLogs.user'
+            'activityLogs.user',
+            'comments.user'
         ]);
 
         // Check if this indicator was reported before (community insights)

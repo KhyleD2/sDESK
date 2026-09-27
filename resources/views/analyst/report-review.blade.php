@@ -650,84 +650,97 @@
     </div>
     @endif
 
-    {{-- Report Details (Read Only) --}}
-    <div class="review-card">
-        <h3 class="card-title">Report Details</h3>
+    {{-- 2-COLUMN GRID LAYOUT - Wider Cards --}}
+    <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px; margin-bottom: 20px;">
         
-        <div class="detail-row">
-            <div class="detail-label">Submitted By:</div>
-            <div class="detail-value">{{ $report->user->name }} ({{ $report->user->email }})</div>
-        </div>
-        
-        <div class="detail-row">
-            <div class="detail-label">Submitted:</div>
-            <div class="detail-value">{{ $report->created_at->format('M d, Y H:i') }}</div>
-        </div>
-        
-        <div class="detail-row">
-            <div class="detail-label">Category:</div>
-            <div class="detail-value">{{ $report->category->name }}</div>
-        </div>
-        
-        <div class="detail-row">
-            <div class="detail-label">Description:</div>
-            <div class="description-box">{{ $report->description }}</div>
+        {{-- LEFT COLUMN: Report Details --}}
+        <div class="review-card">
+            <h3 class="card-title">Report Details</h3>
+            
+            <div class="detail-row">
+                <div class="detail-label">Submitted By:</div>
+                <div class="detail-value">{{ $report->user->name }} ({{ $report->user->email }})</div>
+            </div>
+            
+            <div class="detail-row">
+                <div class="detail-label">Submitted:</div>
+                <div class="detail-value">{{ $report->created_at->format('M d, Y H:i') }}</div>
+            </div>
+            
+            <div class="detail-row">
+                <div class="detail-label">Category:</div>
+                <div class="detail-value">{{ $report->category->name }}</div>
+            </div>
+            
+            <div class="detail-row">
+                <div class="detail-label">Description:</div>
+                <div class="description-box">{{ $report->description }}</div>
+            </div>
+
+            @if($report->verdict === 'escalated_externally' && !empty($report->escalation_note))
+            <div class="detail-row">
+                <div class="detail-label">Escalation Note:</div>
+                <div class="description-box">{{ $report->escalation_note }}</div>
+            </div>
+            @endif
         </div>
 
-        @if($report->verdict === 'escalated_externally' && !empty($report->escalation_note))
-        <div class="detail-row">
-            <div class="detail-label">Escalation Note:</div>
-            <div class="description-box">{{ $report->escalation_note }}</div>
-        </div>
-        @endif
-    </div>
-
-    {{-- Attachments --}}
-    @if($report->attachments->count() > 0)
-    <div class="review-card">
-        <h3 class="card-title">Attachments ({{ $report->attachments->count() }})</h3>
-        @foreach($report->attachments as $attachment)
-        <div class="attachment-item">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div style="flex: 1;">
-                    <div class="attachment-filename">
-                        @php
-                            $extension = pathinfo($attachment->original_filename, PATHINFO_EXTENSION);
-                            $icon = 'fa-file';
-                            if (in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'])) {
-                                $icon = 'fa-file-image';
-                            } elseif (in_array(strtolower($extension), ['pdf'])) {
-                                $icon = 'fa-file-pdf';
-                            } elseif (in_array(strtolower($extension), ['doc', 'docx'])) {
-                                $icon = 'fa-file-word';
-                            } elseif (in_array(strtolower($extension), ['zip', 'rar', '7z'])) {
-                                $icon = 'fa-file-archive';
-                            }
-                            
-                            // Get file size
-                            $filePath = Storage::disk('local')->path($attachment->storage_path);
-                            $fileSize = file_exists($filePath) ? filesize($filePath) : 0;
-                            $fileSizeKB = number_format($fileSize / 1024, 2);
-                        @endphp
-                        <i class="fas {{ $icon }}"></i> {{ $attachment->original_filename }}
+        {{-- RIGHT COLUMN: Attachments --}}
+        @if($report->attachments->count() > 0)
+        <div class="review-card">
+            <h3 class="card-title">Attachments ({{ $report->attachments->count() }})</h3>
+            @foreach($report->attachments as $attachment)
+            <div class="attachment-item">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="flex: 1;">
+                        <div class="attachment-filename">
+                            @php
+                                $extension = pathinfo($attachment->original_filename, PATHINFO_EXTENSION);
+                                $icon = 'fa-file';
+                                if (in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'])) {
+                                    $icon = 'fa-file-image';
+                                } elseif (in_array(strtolower($extension), ['pdf'])) {
+                                    $icon = 'fa-file-pdf';
+                                } elseif (in_array(strtolower($extension), ['doc', 'docx'])) {
+                                    $icon = 'fa-file-word';
+                                } elseif (in_array(strtolower($extension), ['zip', 'rar', '7z'])) {
+                                    $icon = 'fa-file-archive';
+                                }
+                                
+                                // Get file size
+                                $filePath = Storage::disk('local')->path($attachment->storage_path);
+                                $fileSize = file_exists($filePath) ? filesize($filePath) : 0;
+                                $fileSizeKB = number_format($fileSize / 1024, 2);
+                            @endphp
+                            <i class="fas {{ $icon }}"></i> {{ $attachment->original_filename }}
+                        </div>
+                        <div class="attachment-meta">
+                            Type: {{ strtoupper(pathinfo($attachment->original_filename, PATHINFO_EXTENSION)) }} | Size: {{ $fileSizeKB }} KB | Hash: {{ substr($attachment->file_hash, 0, 16) }}...
+                        </div>
                     </div>
-                    <div class="attachment-meta">
-                        Type: {{ strtoupper(pathinfo($attachment->original_filename, PATHINFO_EXTENSION)) }} | Size: {{ $fileSizeKB }} KB | Hash: {{ substr($attachment->file_hash, 0, 16) }}...
+                    <div style="display: flex; gap: 8px;">
+                        <a href="{{ route('attachments.download', ['attachment' => $attachment->id, 'view' => 1]) }}" target="_blank" class="attachment-btn view-btn" title="View">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{{ route('attachments.download', $attachment->id) }}" class="attachment-btn download-btn" title="Download">
+                            <i class="fas fa-download"></i>
+                        </a>
                     </div>
-                </div>
-                <div style="display: flex; gap: 8px;">
-                    <a href="{{ route('attachments.download', ['attachment' => $attachment->id, 'view' => 1]) }}" target="_blank" class="attachment-btn view-btn" title="View">
-                        <i class="fas fa-eye"></i>
-                    </a>
-                    <a href="{{ route('attachments.download', $attachment->id) }}" class="attachment-btn download-btn" title="Download">
-                        <i class="fas fa-download"></i>
-                    </a>
                 </div>
             </div>
+            @endforeach
         </div>
-        @endforeach
+        @else
+        <div class="review-card">
+            <h3 class="card-title">Attachments</h3>
+            <div class="empty-state">
+                <i class="fas fa-paperclip"></i>
+                No attachments
+            </div>
+        </div>
+        @endif
+
     </div>
-    @endif
 
     {{-- Editable Fields (Analyst Actions) --}}
     <form method="POST" action="{{ route('analyst.report-queue.update', $report->id) }}" class="assessment-form">
@@ -953,25 +966,64 @@
         @endif
     </div>
 
-    {{-- Activity Log --}}
+    {{-- Comments Section --}}
     <div class="review-card">
-        <h3 class="card-title">Activity Log</h3>
-        @if($report->activityLogs->count() > 0)
+        <h3 class="card-title"><i class="fas fa-comments"></i> Comments</h3>
+        @if($report->comments->count() > 0)
         <ul class="activity-list">
-            @foreach($report->activityLogs as $log)
-            <li class="activity-item">
-                <div class="activity-user">{{ $log->user->name }}</div>
-                <div class="activity-description">{{ $log->action_description }}</div>
-                <div class="activity-time">{{ $log->created_at->format('M d, Y H:i') }}</div>
+            @foreach($report->comments as $comment)
+            <li class="activity-item" style="display: flex; gap: 14px; align-items: flex-start;">
+                {{-- Profile Picture --}}
+                <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: var(--cyan-dim); border: 2px solid var(--cyan);">
+                    @if($comment->user->profile_picture)
+                        <img src="{{ asset('storage/' . $comment->user->profile_picture) }}" alt="{{ $comment->user->name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    @else
+                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--cyan); font-weight: 700; font-size: 16px;">
+                            {{ strtoupper(substr($comment->user->name, 0, 1)) }}
+                        </div>
+                    @endif
+                </div>
+                {{-- Comment Content --}}
+                <div style="flex: 1; min-width: 0;">
+                    <div class="activity-user">{{ $comment->user->name }}</div>
+                    <div class="activity-description">{{ $comment->comment }}</div>
+                    <div class="activity-time">{{ $comment->created_at->format('M d, Y H:i') }}</div>
+                </div>
             </li>
             @endforeach
         </ul>
         @else
         <div class="empty-state">
-            <i class="fas fa-clipboard-list" style="font-size: 32px; opacity: 0.3; margin-bottom: 12px; display: block;"></i>
-            No activity logged yet.
+            <i class="fas fa-comments" style="font-size: 32px; opacity: 0.3; margin-bottom: 12px; display: block;"></i>
+            No comments yet. Be the first to comment!
         </div>
         @endif
+
+        {{-- Add Comment Form --}}
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line-soft);">
+            <form method="POST" action="{{ route('reports.comments.store', $report->id) }}">
+                @csrf
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px;">Add Comment</label>
+                    <textarea 
+                        name="comment" 
+                        rows="3" 
+                        required 
+                        maxlength="1000"
+                        placeholder="Write a comment to communicate with the user..."
+                        class="form-textarea"
+                    ></textarea>
+                    @error('comment')
+                        <span style="font-size: 11px; color: var(--rose); margin-top: 5px; display: flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                        </span>
+                    @enderror
+                </div>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-paper-plane"></i> Post Comment
+                </button>
+            </form>
+        </div>
     </div>
 
     <div style="margin-top: 32px;">

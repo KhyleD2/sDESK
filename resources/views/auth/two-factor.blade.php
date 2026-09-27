@@ -30,7 +30,7 @@
 
         [data-theme="light"] {
             --bg:          #E8EDEC;
-            --bg-raised:   #FFFFFF;
+            --bg-raised:   #F5F7F6;
             --bg-card:     #F3F7F6;
             --bg-input:    #EEF3F2;
             --line:        #C8D8D5;
@@ -355,7 +355,7 @@
         <div class="trust-device-option">
             <label>
                 <input type="checkbox" name="trust_device" value="1" id="trustDevice">
-                <span>Trust this device for 30 days</span>
+                <span>Trust this device for 7 days</span>
             </label>
         </div>
 

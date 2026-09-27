@@ -57,11 +57,19 @@ Route::middleware('auth')->group(function () {
 
     // User Routes - Threat Reports (Users can submit, all can view their own)
     Route::resource('reports', ThreatReportController::class);
+    
+    // Report Comments - All authenticated users
+    Route::post('/reports/{report}/comments', [\App\Http\Controllers\ReportCommentController::class, 'store'])->name('reports.comments.store');
 
     // Notifications - All roles
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    
+    // Profile/Settings - All roles
+    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile/picture', [\App\Http\Controllers\ProfileController::class, 'removeProfilePicture'])->name('profile.remove-picture');
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
     
     // API endpoints for notification dropdown
@@ -93,6 +101,7 @@ Route::middleware('auth')->group(function () {
 
     // Admin Routes
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
+
         // Admin Dashboard (different from analyst)
         Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
         
@@ -118,6 +127,11 @@ Route::middleware('auth')->group(function () {
         // Known Threats Management (Full CRUD for admins)
         Route::post('/known-threats', [KnownThreatController::class, 'store'])->name('known-threats.store');
         Route::delete('/known-threats/{knownThreat}', [KnownThreatController::class, 'destroy'])->name('known-threats.destroy');
+        
+        // Archives Management
+        Route::get('/archives', [\App\Http\Controllers\Admin\ArchivesController::class, 'index'])->name('archives');
+        Route::post('/archives/{id}/restore', [\App\Http\Controllers\Admin\ArchivesController::class, 'restore'])->name('archives.restore');
+        Route::delete('/archives/{id}/force-delete', [\App\Http\Controllers\Admin\ArchivesController::class, 'forceDelete'])->name('archives.force-delete');
         
         // Admin can access all analyst routes too
         Route::get('/report-queue', [ReportQueueController::class, 'index'])->name('report-queue.index');

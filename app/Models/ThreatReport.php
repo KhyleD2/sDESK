@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ThreatReport extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'user_id',
@@ -20,11 +21,14 @@ class ThreatReport extends Model
         'escalation_note',
         'status',
         'scan_result',
+        'archived_by',
+        'archive_reason',
     ];
 
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -55,5 +59,10 @@ class ThreatReport extends Model
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class, 'report_id');
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(ReportComment::class, 'report_id');
     }
 }

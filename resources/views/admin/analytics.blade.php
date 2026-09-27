@@ -115,9 +115,9 @@
         margin-bottom: 20px;
     }
     
-    .panels-row-three {
+    .panels-row-four {
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: repeat(4, 1fr);
         gap: 18px;
         margin-bottom: 20px;
     }
@@ -181,32 +181,30 @@
         letter-spacing: 1px;
     }
     
-    /* Category Bars */
+    /* Category Bars - Redesigned */
     .category-list {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 14px;
     }
     
     .category-item {
-        display: flex;
+        display: grid;
+        grid-template-columns: 140px 1fr 50px;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
     }
     
     .category-label {
         font-size: 13px;
         color: var(--text);
-        font-weight: 500;
-        width: 100px;
-        flex-shrink: 0;
+        font-weight: 600;
     }
     
     .category-bar-track {
-        flex: 1;
-        height: 18px;
+        height: 22px;
         background: var(--line-soft);
-        border-radius: 6px;
+        border-radius: 8px;
         overflow: hidden;
         position: relative;
     }
@@ -214,27 +212,16 @@
     .category-bar-fill {
         height: 100%;
         background: linear-gradient(90deg, var(--cyan) 0%, #1AA89C 100%);
-        border-radius: 6px;
+        border-radius: 8px;
         transition: width 0.6s ease;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        padding-right: 8px;
     }
     
-    .category-bar-count {
+    .category-count {
         font-family: 'IBM Plex Mono', monospace;
-        font-size: 11px;
+        font-size: 13px;
         font-weight: 700;
-        color: #04211E;
-    }
-    
-    .category-bar-count-outside {
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--text-dim);
-        padding-left: 8px;
+        color: var(--text);
+        text-align: right;
     }
     
     /* Donut Charts */
@@ -316,7 +303,7 @@
         font-size: 11px;
         color: var(--text);
         font-weight: 500;
-        width: 160px;
+        width: 80px;
         flex-shrink: 0;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -430,46 +417,22 @@
     </div>
 </div>
 
-{{-- Row 1: Category Bars (Full Width) --}}
-<div class="panel-full">
+{{-- Row 1: Four Donut Charts in One Row --}}
+<div class="panels-row-four">
+    {{-- Reports by Category Donut --}}
     <div class="panel">
         <div class="panel-header">
             <div class="panel-title">Reports by Category</div>
             <div class="panel-subtitle">ALL-TIME DISTRIBUTION</div>
         </div>
-        @if($analyticsData['reportsByCategory']->count() > 0)
-            @php
-                $maxCount = $analyticsData['reportsByCategory']->max('total');
-            @endphp
-            <div class="category-list">
-                @foreach($analyticsData['reportsByCategory']->sortByDesc('total')->take(5) as $item)
-                    @php
-                        $percentage = $maxCount > 0 ? ($item->total / $maxCount * 100) : 0;
-                        $showInside = $percentage > 20;
-                    @endphp
-                    <div class="category-item">
-                        <div class="category-label">{{ $item->name }}</div>
-                        <div class="category-bar-track">
-                            <div class="category-bar-fill" style="width: {{ $percentage }}%;">
-                                @if($showInside)
-                                    <span class="category-bar-count">{{ $item->total }}</span>
-                                @endif
-                            </div>
-                        </div>
-                        @if(!$showInside)
-                            <span class="category-bar-count-outside">{{ $item->total }}</span>
-                        @endif
-                    </div>
-                @endforeach
+        <div class="donut-container">
+            <div class="donut-chart-wrapper">
+                <canvas id="categoryChart"></canvas>
             </div>
-        @else
-            <div class="empty-state">No category data available</div>
-        @endif
+            <div class="donut-legend" id="categoryLegend"></div>
+        </div>
     </div>
-</div>
-
-{{-- Row 2: Three Donut Charts in One Row --}}
-<div class="panels-row-three">
+    
     {{-- Severity Distribution --}}
     <div class="panel">
         <div class="panel-header">
@@ -663,6 +626,80 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         });
         legendContainer.innerHTML = legendHTML;
+    }
+    
+    // Reports by Category Donut
+    const categoryColors = ['#34E4D6', '#9B8CFF', '#F5B942', '#FF5C7A', '#3DD68C', '#E9D566'];
+    const categoryData = analyticsData.reportsByCategory.map((item, index) => ({
+        ...item,
+        color: categoryColors[index % categoryColors.length]
+    }));
+    
+    if (categoryData.length > 0) {
+        const categoryCanvas = document.getElementById('categoryChart');
+        const categoryLegend = document.getElementById('categoryLegend');
+        
+        const labels = categoryData.map(item => item.name);
+        const values = categoryData.map(item => item.total);
+        const bgColors = categoryData.map(item => item.color);
+        
+        new Chart(categoryCanvas.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: bgColors,
+                    borderWidth: 2,
+                    borderColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-card').trim(),
+                    cutout: '78%'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                animation: {
+                    duration: 800,
+                    easing: 'easeInOutQuart'
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(19, 24, 34, 0.95)',
+                        titleColor: '#E7EBF2',
+                        bodyColor: '#7C8698',
+                        borderColor: '#212836',
+                        borderWidth: 1,
+                        padding: 12,
+                        cornerRadius: 8,
+                        titleFont: { 
+                            family: "'IBM Plex Mono', monospace",
+                            size: 12, 
+                            weight: 600 
+                        },
+                        bodyFont: { 
+                            family: "'IBM Plex Mono', monospace",
+                            size: 11 
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Create legend
+        let legendHTML = '';
+        categoryData.forEach((item, index) => {
+            legendHTML += `
+                <div class="legend-item">
+                    <div class="legend-label-group">
+                        <span class="legend-dot" style="background: ${item.color};"></span>
+                        <span class="legend-label">${item.name}</span>
+                    </div>
+                    <span class="legend-count">${String(item.total).padStart(2, '0')}</span>
+                </div>
+            `;
+        });
+        categoryLegend.innerHTML = legendHTML;
     }
     
     // Severity Distribution

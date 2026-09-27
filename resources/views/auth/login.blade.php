@@ -37,7 +37,7 @@
 
         [data-theme="light"] {
             --bg:          #E8EDEC;
-            --bg-raised:   #FFFFFF;
+            --bg-raised:   #F5F7F6;
             --bg-card:     #F3F7F6;
             --bg-input:    #EEF3F2;
             --line:        #C8D8D5;

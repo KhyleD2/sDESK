@@ -470,8 +470,12 @@
                 <tr>
                     <td>
                         <div class="user-name-cell">
-                            <div class="user-avatar {{ $user->role }}">
-                                {{ strtoupper(substr($user->name, 0, 1)) }}
+                            <div class="user-avatar {{ $user->role }}" style="overflow: hidden;">
+                                @if($user->profile_picture)
+                                    <img src="{{ asset('storage/' . $user->profile_picture) }}" alt="{{ $user->name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                @else
+                                    {{ strtoupper(substr($user->name, 0, 1)) }}
+                                @endif
                             </div>
                             <span class="user-name">{{ $user->name }}</span>
                         </div>
@@ -488,15 +492,6 @@
                             <a href="{{ route('admin.users.edit', $user->id) }}" class="edit-btn">
                                 <i class="fas fa-edit"></i> Edit
                             </a>
-                            @if($user->id !== Auth::id())
-                            <form method="POST" action="{{ route('admin.users.destroy', $user->id) }}" style="display: inline; margin: 0;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" onclick="return confirm('Are you sure you want to delete this user?')" class="delete-btn">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </form>
-                            @endif
                         </div>
                     </td>
                 </tr>

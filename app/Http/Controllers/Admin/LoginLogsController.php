@@ -28,7 +28,7 @@ class LoginLogsController extends Controller
             $query->whereDate('created_at', $request->date);
         }
 
-        $logs = $query->paginate(50);
+        $logs = $query->paginate(10);
 
         return view('admin.login-logs', compact('logs'));
     }

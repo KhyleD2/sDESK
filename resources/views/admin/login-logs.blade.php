@@ -155,19 +155,26 @@
     .pagination {
         display: flex;
         justify-content: center;
+        align-items: center;
         gap: 8px;
         margin-top: 20px;
     }
 
     .pagination a, .pagination span {
-        padding: 8px 14px;
+        min-width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         background: var(--bg-card);
         border: 1px solid var(--line);
         border-radius: 8px;
         color: var(--text);
         text-decoration: none;
         font-size: 13px;
+        font-weight: 600;
         transition: all 0.2s;
+        padding: 0 12px;
     }
 
     .pagination a:hover {
@@ -175,10 +182,20 @@
         border-color: var(--cyan);
     }
 
-    .pagination .active {
+    .pagination .active span {
         background: var(--cyan);
         color: #04211E;
         border-color: var(--cyan);
+    }
+    
+    .pagination .disabled span {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+    
+    .pagination svg {
+        width: 16px;
+        height: 16px;
     }
 
     .alert-success {
@@ -352,8 +369,39 @@
     </table>
 </div>
 
-<div class="pagination">
-    {{ $logs->links() }}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 16px 20px; background: var(--bg-card); border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
+    <div style="font-size: 13px; color: var(--text-dim); font-weight: 500;">
+        Showing {{ $logs->firstItem() ?? 0 }} to {{ $logs->lastItem() ?? 0 }} of {{ $logs->total() }} logs
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+        @if ($logs->onFirstPage())
+            <span style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; color: var(--text-faint); opacity: 0.3; cursor: not-allowed;">
+                <i class="fas fa-chevron-left"></i>
+            </span>
+        @else
+            <a href="{{ $logs->previousPageUrl() }}" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; color: var(--text); text-decoration: none; transition: all 0.2s;">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        @endif
+
+        @foreach ($logs->getUrlRange(max(1, $logs->currentPage() - 2), min($logs->lastPage(), $logs->currentPage() + 2)) as $page => $url)
+            @if ($page == $logs->currentPage())
+                <span style="min-width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--cyan); border: 1px solid var(--cyan); border-radius: 8px; color: #04211E; font-weight: 700; font-size: 13px; padding: 0 12px;">{{ $page }}</span>
+            @else
+                <a href="{{ $url }}" style="min-width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; color: var(--text); text-decoration: none; font-weight: 600; font-size: 13px; transition: all 0.2s; padding: 0 12px;">{{ $page }}</a>
+            @endif
+        @endforeach
+
+        @if ($logs->hasMorePages())
+            <a href="{{ $logs->nextPageUrl() }}" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; color: var(--text); text-decoration: none; transition: all 0.2s;">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        @else
+            <span style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; color: var(--text-faint); opacity: 0.3; cursor: not-allowed;">
+                <i class="fas fa-chevron-right"></i>
+            </span>
+        @endif
+    </div>
 </div>
 
 @endsection
