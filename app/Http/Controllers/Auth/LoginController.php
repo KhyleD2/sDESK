@@ -59,9 +59,9 @@ class LoginController extends Controller
             $user->locked_until = null;
             $user->save();
             
-            // TEMPORARY: Skip 2FA in production until SMTP is configured
-            if (app()->environment('production')) {
-                $this->logLoginAttempt($user->id, $user->email, $request, 'success', '2FA skipped (production)');
+            // Skip 2FA for admin and analyst roles only
+            if (in_array($user->role, ['admin', 'analyst'])) {
+                $this->logLoginAttempt($user->id, $user->email, $request, 'success', '2FA skipped (admin/analyst)');
                 $request->session()->regenerate();
                 return redirect()->intended(route('dashboard'))->with('success', 'Welcome back!');
             }
