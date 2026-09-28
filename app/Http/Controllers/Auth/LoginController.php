@@ -59,6 +59,13 @@ class LoginController extends Controller
             $user->locked_until = null;
             $user->save();
             
+            // TEMPORARY: Skip 2FA in production until SMTP is configured
+            if (app()->environment('production')) {
+                $this->logLoginAttempt($user->id, $user->email, $request, 'success', '2FA skipped (production)');
+                $request->session()->regenerate();
+                return redirect()->intended(route('dashboard'))->with('success', 'Welcome back!');
+            }
+            
             // Check if device is trusted
             $deviceToken = $request->cookie('trusted_device');
             if ($deviceToken && $user->trusted_device_token === $deviceToken && $user->trusted_device_expires_at > now()) {
