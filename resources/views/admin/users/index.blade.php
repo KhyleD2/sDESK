@@ -289,19 +289,22 @@
         align-items: center;
         gap: 6px;
         padding: 8px 14px;
-        background: var(--cyan-dim);
-        border: 1px solid var(--cyan);
+        background: var(--bg);
+        border: 1px solid var(--line);
         border-radius: 6px;
-        color: var(--cyan);
+        color: var(--text);
         font-size: 13px;
         font-weight: 600;
         cursor: pointer;
         text-decoration: none;
-        transition: opacity 0.2s;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
     
     .edit-btn:hover {
-        opacity: 0.8;
+        background: var(--line-soft);
+        border-color: var(--line-soft);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
     
     .delete-btn {
