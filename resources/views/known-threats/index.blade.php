@@ -563,10 +563,14 @@
                             @php
                                 $attachment = $threat->attachment();
                             @endphp
-                            @if($attachment)
+                            @if($attachment && \Storage::disk('local')->exists('attachments/' . $attachment->file_path))
                                 <a href="{{ route('attachments.download', $attachment->id) }}" class="view-file-btn" style="margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--cyan-dim); border: 1px solid var(--cyan); border-radius: 6px; color: var(--cyan); font-size: 12px; font-weight: 600; text-decoration: none; transition: all 0.2s;">
                                     <i class="fas fa-eye"></i> View/Download File ({{ $attachment->original_filename }})
                                 </a>
+                            @elseif($attachment)
+                                <div style="margin-top: 8px; padding: 6px 12px; background: var(--line-soft); border-radius: 6px; color: var(--text-dim); font-size: 11px;">
+                                    <i class="fas fa-info-circle"></i> Original file: {{ $attachment->original_filename }} (no longer available)
+                                </div>
                             @endif
                         @endif
                     </td>
