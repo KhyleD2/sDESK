@@ -12,11 +12,12 @@ class AnalyticsController extends Controller
 {
     public function index()
     {
-        // 1. Reports by Category
-        $reportsByCategory = ThreatReport::join('threat_categories', 'threat_reports.category_id', '=', 'threat_categories.id')
-            ->select('threat_categories.name', DB::raw('count(*) as total'))
-            ->groupBy('threat_categories.name')
-            ->get();
+        try {
+            // 1. Reports by Category
+            $reportsByCategory = ThreatReport::join('threat_categories', 'threat_reports.category_id', '=', 'threat_categories.id')
+                ->select('threat_categories.name', DB::raw('count(*) as total'))
+                ->groupBy('threat_categories.name')
+                ->get();
 
         // 2. Severity Distribution
         $severityDistribution = ThreatReport::select('severity', DB::raw('count(*) as total'))
@@ -124,6 +125,10 @@ class AnalyticsController extends Controller
             'falsePositives',
             'avgResolutionTime'
         ));
+        } catch (\Exception $e) {
+            \Log::error('Analytics Error: ' . $e->getMessage());
+            return back()->with('error', 'Unable to load analytics: ' . $e->getMessage());
+        }
     }
 
     public function export(Request $request)
