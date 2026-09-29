@@ -33,4 +33,17 @@ class KnownThreat extends Model
     {
         return $this->belongsTo(User::class, 'added_by');
     }
+
+    /**
+     * Get the attachment associated with this file hash indicator
+     * Only applicable for file_hash type threats
+     */
+    public function attachment()
+    {
+        if ($this->type !== 'file_hash') {
+            return null;
+        }
+
+        return Attachment::where('file_hash', $this->indicator)->first();
+    }
 }

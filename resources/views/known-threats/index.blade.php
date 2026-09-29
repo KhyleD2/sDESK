@@ -559,6 +559,16 @@
                                 {{ $threat->indicator }}
                             @endif
                         </div>
+                        @if($threat->type === 'file_hash')
+                            @php
+                                $attachment = $threat->attachment();
+                            @endphp
+                            @if($attachment)
+                                <a href="{{ route('attachments.download', $attachment->id) }}" class="view-file-btn" style="margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--cyan-dim); border: 1px solid var(--cyan); border-radius: 6px; color: var(--cyan); font-size: 12px; font-weight: 600; text-decoration: none; transition: all 0.2s;">
+                                    <i class="fas fa-eye"></i> View/Download File ({{ $attachment->original_filename }})
+                                </a>
+                            @endif
+                        @endif
                     </td>
                     <td>
                         <span class="type-badge {{ $threat->type }}">
