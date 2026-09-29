@@ -15,32 +15,38 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create admin account with your email
-        User::create([
-            'name' => 'Khyle Drey',
-            'email' => 'khyle.drey@gmail.com',
-            'password' => bcrypt('admin123'),
-            'role' => 'admin',
-            'email_verified_at' => now(),
-        ]);
+        // Create or update admin account with your email
+        User::updateOrCreate(
+            ['email' => 'khyle.drey@gmail.com'],
+            [
+                'name' => 'Khyle Drey',
+                'password' => bcrypt('admin123'),
+                'role' => 'admin',
+                'email_verified_at' => now(),
+            ]
+        );
 
-        // Create analyst account
-        User::create([
-            'name' => 'Security Analyst',
-            'email' => 'analyst@sentrydesk.local',
-            'password' => bcrypt('analyst123'),
-            'role' => 'analyst',
-            'email_verified_at' => now(),
-        ]);
+        // Create or update analyst account
+        User::updateOrCreate(
+            ['email' => 'analyst@sentrydesk.local'],
+            [
+                'name' => 'Security Analyst',
+                'password' => bcrypt('analyst123'),
+                'role' => 'analyst',
+                'email_verified_at' => now(),
+            ]
+        );
 
-        // Create regular user account
-        User::create([
-            'name' => 'Regular User',
-            'email' => 'user@sentrydesk.local',
-            'password' => bcrypt('user123'),
-            'role' => 'user',
-            'email_verified_at' => now(),
-        ]);
+        // Create or update regular user account
+        User::updateOrCreate(
+            ['email' => 'user@sentrydesk.local'],
+            [
+                'name' => 'Regular User',
+                'password' => bcrypt('user123'),
+                'role' => 'user',
+                'email_verified_at' => now(),
+            ]
+        );
 
         // Seed threat categories
         $this->call([
