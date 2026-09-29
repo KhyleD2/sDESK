@@ -13,13 +13,18 @@ class ThreatCategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            ['name' => 'Phishing', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Malware/Suspicious Files', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Suspicious URLs/Websites', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Social Engineering', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Data Leak/Exposure', 'created_at' => now(), 'updated_at' => now()],
+            'Phishing',
+            'Malware/Suspicious Files',
+            'Suspicious URLs/Websites',
+            'Social Engineering',
+            'Data Leak/Exposure',
         ];
 
-        DB::table('threat_categories')->insert($categories);
+        foreach ($categories as $categoryName) {
+            \App\Models\ThreatCategory::firstOrCreate(
+                ['name' => $categoryName],
+                ['created_at' => now(), 'updated_at' => now()]
+            );
+        }
     }
 }
