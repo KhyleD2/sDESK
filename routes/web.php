@@ -175,5 +175,41 @@ Route::middleware('auth')->group(function () {
                 'all_reports' => $reports
             ], 200, [], JSON_PRETTY_PRINT);
         })->name('debug.resolution-time');
+        
+        // Diagnostic route for file storage debugging
+        Route::get('/debug/attachments', function () {
+            $attachments = \App\Models\Attachment::orderBy('id', 'desc')
+                ->limit(10)
+                ->get()
+                ->map(function($attachment) {
+                    $storagePath = $attachment->storage_path;
+                    $fileExists = \Storage::disk('local')->exists($storagePath);
+                    $fullPath = \Storage::disk('local')->path($storagePath);
+                    
+                    return [
+                        'id' => $attachment->id,
+                        'original_filename' => $attachment->original_filename,
+                        'stored_filename' => $attachment->stored_filename,
+                        'storage_path' => $storagePath,
+                        'file_hash' => substr($attachment->file_hash, 0, 32) . '...',
+                        'file_type' => $attachment->file_type,
+                        'file_exists' => $fileExists,
+                        'full_path' => $fullPath,
+                        'disk_root' => storage_path('app/private'),
+                    ];
+                });
+            
+            return response()->json([
+                'total_attachments' => \App\Models\Attachment::count(),
+                'attachments' => $attachments,
+                'storage_info' => [
+                    'local_disk_root' => storage_path('app/private'),
+                    'threat_attachments_dir_exists' => is_dir(storage_path('app/private/threat_attachments')),
+                    'files_in_threat_attachments' => is_dir(storage_path('app/private/threat_attachments')) 
+                        ? array_slice(scandir(storage_path('app/private/threat_attachments')), 2, 10) 
+                        : []
+                ]
+            ], 200, [], JSON_PRETTY_PRINT);
+        })->name('debug.attachments');
     });
 });
