@@ -59,6 +59,13 @@ class LoginController extends Controller
             $user->locked_until = null;
             $user->save();
             
+            // TEMP: Disable 2FA for demo - Resend free tier restriction
+            // Skip 2FA for all users during demo
+            $this->logLoginAttempt($user->id, $user->email, $request, 'success', '2FA disabled for demo');
+            $request->session()->regenerate();
+            return redirect()->intended(route('dashboard'))->with('success', 'Welcome back!');
+            
+            /* ORIGINAL 2FA CODE - Uncomment when domain is verified
             // Skip 2FA for admin and analyst roles only
             if (in_array($user->role, ['admin', 'analyst'])) {
                 $this->logLoginAttempt($user->id, $user->email, $request, 'success', '2FA skipped (admin/analyst)');
@@ -98,6 +105,7 @@ class LoginController extends Controller
             $request->session()->save(); // Force save session
             
             return redirect()->route('2fa.verify')->with('success', 'A 6-digit verification code has been sent to your email.');
+            */
         }
 
         // Failed login attempt
