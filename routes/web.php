@@ -139,7 +139,10 @@ Route::middleware('auth')->group(function () {
         Route::put('/report-queue/{report}', [ReportQueueController::class, 'update'])->name('report-queue.update');
         Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs');
         Route::get('/known-threats', [KnownThreatController::class, 'index'])->name('known-threats');
-        
+    });
+    
+    // Debug routes accessible to both admin and analyst
+    Route::middleware('role:admin,analyst')->prefix('admin')->name('admin.')->group(function () {
         // Diagnostic route for debugging resolution time
         Route::get('/debug/resolution-time', function () {
             $reports = \App\Models\ThreatReport::select('id', 'status', 'created_at', 'updated_at')
