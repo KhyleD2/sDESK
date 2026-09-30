@@ -59,6 +59,12 @@ class AnalyticsController extends Controller
         $endWeek = now();
         $startWeek = now()->subWeeks($weeksAgo - 1);
         
+        // Debug: Check resolved reports in the last 12 weeks
+        $recentResolvedCount = ThreatReport::where('status', 'resolved')
+            ->where('created_at', '>=', $startWeek)
+            ->count();
+        \Log::info("Analytics Debug - Resolved Reports (last 12 weeks): {$recentResolvedCount}");
+        
         // Get actual resolution time data (using hours for precision)
         $actualResolutionData = ThreatReport::whereNotNull('updated_at')
             ->where('status', 'resolved')
@@ -72,6 +78,8 @@ class AnalyticsController extends Controller
             ->orderBy('week_key')
             ->get()
             ->keyBy('week_key');
+        
+        \Log::info("Analytics Debug - Resolution Data: " . $actualResolutionData->toJson());
         
         // Generate all 12 weeks and fill with 0 for missing data
         $resolutionTimeTrend = collect();
@@ -102,10 +110,17 @@ class AnalyticsController extends Controller
         $totalReports = ThreatReport::count();
         $confirmedThreats = ThreatReport::where('verdict', 'confirmed_threat')->count();
         $falsePositives = ThreatReport::where('verdict', 'false_positive')->count();
+        
+        // Debug: Check how many resolved reports we have
+        $resolvedCount = ThreatReport::where('status', 'resolved')->count();
+        \Log::info("Analytics Debug - Resolved Reports Count: {$resolvedCount}");
+        
         $avgResolutionTime = ThreatReport::where('status', 'resolved')
             ->whereNotNull('updated_at')
             ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at) / 24.0) as avg_days')
             ->value('avg_days');
+        
+        \Log::info("Analytics Debug - Average Resolution Time: " . ($avgResolutionTime ?? 'NULL'));
         
         // Round to 2 decimal places
         $avgResolutionTime = $avgResolutionTime ? round($avgResolutionTime, 2) : null;
