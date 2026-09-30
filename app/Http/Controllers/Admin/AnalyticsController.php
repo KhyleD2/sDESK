@@ -75,7 +75,7 @@ class AnalyticsController extends Controller
             ->whereNotNull('updated_at')
             ->where('created_at', '>=', now()->subWeeks($weeksAgo))
             ->select('id', 'created_at', 'updated_at',
-                DB::raw('TIMESTAMPDIFF(HOUR, created_at, updated_at) / 24.0 as days_to_resolve'))
+                DB::raw('TIMESTAMPDIFF(SECOND, created_at, updated_at) / 86400.0 as days_to_resolve'))
             ->get();
         
         \Log::info("Analytics Debug - Resolution Trend Data: " . $resolvedReportsForTrend->toJson());
@@ -102,7 +102,9 @@ class AnalyticsController extends Controller
             
             $avgDays = 0;
             if (isset($weeklyData[$weekLabel]) && $weeklyData[$weekLabel]['count'] > 0) {
-                $avgDays = round($weeklyData[$weekLabel]['sum'] / $weeklyData[$weekLabel]['count'], 2);
+                $avgDays = $weeklyData[$weekLabel]['sum'] / $weeklyData[$weekLabel]['count'];
+                // Show at least 0.01 if there's any resolution time
+                $avgDays = max(0.01, round($avgDays, 2));
             }
             
             $resolutionTimeTrend->push([
@@ -135,20 +137,23 @@ class AnalyticsController extends Controller
         // Get resolved reports with timestamps for debugging
         $resolvedReports = ThreatReport::where('status', 'resolved')
             ->select('id', 'created_at', 'updated_at', 
-                DB::raw('TIMESTAMPDIFF(HOUR, created_at, updated_at) as hours_diff'),
-                DB::raw('TIMESTAMPDIFF(HOUR, created_at, updated_at) / 24.0 as days_diff'))
+                DB::raw('TIMESTAMPDIFF(SECOND, created_at, updated_at) as seconds_diff'),
+                DB::raw('TIMESTAMPDIFF(SECOND, created_at, updated_at) / 86400.0 as days_diff'))
             ->get();
         \Log::info("Analytics Debug - Resolved Reports Details: " . $resolvedReports->toJson());
         
+        // Use seconds for more precision, then convert to days
         $avgResolutionTime = ThreatReport::where('status', 'resolved')
             ->whereNotNull('updated_at')
-            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at) / 24.0) as avg_days')
+            ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, created_at, updated_at) / 86400.0) as avg_days')
             ->value('avg_days');
         
         \Log::info("Analytics Debug - Average Resolution Time: " . ($avgResolutionTime ?? 'NULL'));
         
-        // Round to 2 decimal places
-        $avgResolutionTime = $avgResolutionTime ? round($avgResolutionTime, 2) : null;
+        // Round to 2 decimal places, but show at least 0.01 if there's any time
+        if ($avgResolutionTime !== null) {
+            $avgResolutionTime = max(0.01, round($avgResolutionTime, 2));
+        }
 
         // Prepare data for Chart.js (encode as JSON)
         $analyticsData = [
