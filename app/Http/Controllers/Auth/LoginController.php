@@ -147,6 +147,11 @@ class LoginController extends Controller
             return redirect()->route('login')->withErrors(['error' => 'Please login first.']);
         }
         
+        // Clear any existing auth to prevent conflicts
+        if (Auth::check()) {
+            Auth::logout();
+        }
+        
         return view('auth.two-factor');
     }
 
@@ -198,7 +203,7 @@ class LoginController extends Controller
         // Log the user in
         Auth::login($user, session('2fa_remember', false));
         
-        // Clear session data
+        // Clear session data and regenerate to prevent conflicts
         $request->session()->forget(['2fa_email', '2fa_remember']);
         $request->session()->regenerate();
 
@@ -239,6 +244,7 @@ class LoginController extends Controller
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+        $request->session()->flush(); // Clear all session data
 
         return redirect()->route('login');
     }
