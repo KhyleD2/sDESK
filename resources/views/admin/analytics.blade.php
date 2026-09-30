@@ -412,7 +412,7 @@
             <div class="stat-icon icon-amber"><i class="fas fa-clock"></i></div>
             <div class="stat-label-top">AVG TIME</div>
         </div>
-        <div class="stat-value">{{ $avgResolutionTime ? number_format($avgResolutionTime, 1) : 'N/A' }}</div>
+        <div class="stat-value">{{ $avgResolutionTime ? number_format($avgResolutionTime, 2) : 'N/A' }}</div>
         <div class="stat-label-bottom">Resolution (days)</div>
     </div>
 </div>
