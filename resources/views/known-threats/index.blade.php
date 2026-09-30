@@ -562,14 +562,16 @@
                         @if($threat->type === 'file_hash')
                             @php
                                 $attachment = $threat->attachment();
+                                $filePath = $attachment ? 'threat_attachments/' . $attachment->stored_filename : null;
+                                $fileExists = $attachment && \Storage::disk('local')->exists($filePath);
                             @endphp
-                            @if($attachment && \Storage::disk('local')->exists('threat_attachments/' . $attachment->stored_filename))
+                            @if($fileExists)
                                 <a href="{{ route('attachments.download', $attachment->id) }}" class="view-file-btn" style="margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--cyan-dim); border: 1px solid var(--cyan); border-radius: 6px; color: var(--cyan); font-size: 12px; font-weight: 600; text-decoration: none; transition: all 0.2s;">
-                                    <i class="fas fa-download"></i> Download File: {{ $attachment->original_filename }}
+                                    <i class="fas fa-download"></i> Download: {{ $attachment->original_filename }}
                                 </a>
                             @elseif($attachment)
-                                <div style="margin-top: 8px; padding: 6px 12px; background: var(--line-soft); border-radius: 6px; color: var(--text-dim); font-size: 11px;">
-                                    <i class="fas fa-info-circle"></i> Original file: {{ $attachment->original_filename }} (no longer available)
+                                <div style="margin-top: 8px; padding: 6px 12px; background: var(--line-soft); border-radius: 6px; color: var(--text-dim); font-size: 11px;" title="Looking for: {{ $filePath }}">
+                                    <i class="fas fa-info-circle"></i> Original: {{ $attachment->original_filename }} (unavailable)
                                 </div>
                             @endif
                         @endif
@@ -578,31 +580,34 @@
                         @if($threat->type === 'file_hash')
                             @php
                                 $attachment = $threat->attachment();
-                                $fileType = 'File Hash';
-                                if ($attachment) {
-                                    // Get friendly file type from mime type
-                                    $mime = $attachment->file_type;
-                                    if (str_contains($mime, 'pdf')) {
-                                        $fileType = 'PDF Document';
-                                    } elseif (str_contains($mime, 'word') || str_contains($mime, 'document')) {
-                                        $fileType = 'Word Document';
-                                    } elseif (str_contains($mime, 'spreadsheet') || str_contains($mime, 'excel')) {
-                                        $fileType = 'Spreadsheet';
-                                    } elseif (str_contains($mime, 'image')) {
-                                        $fileType = 'Image File';
-                                    } elseif (str_contains($mime, 'zip') || str_contains($mime, 'compressed')) {
-                                        $fileType = 'Archive File';
-                                    } elseif (str_contains($mime, 'text')) {
-                                        $fileType = 'Text File';
-                                    } elseif (str_contains($mime, 'executable') || str_contains($mime, 'application/x-msdownload')) {
-                                        $fileType = 'Executable';
-                                    } else {
-                                        $fileType = 'File (' . pathinfo($attachment->original_filename, PATHINFO_EXTENSION) . ')';
+                                $fileTypeDisplay = 'File Hash';
+                                
+                                if ($attachment && $attachment->file_type) {
+                                    $mime = strtolower($attachment->file_type);
+                                    $ext = strtolower(pathinfo($attachment->original_filename, PATHINFO_EXTENSION));
+                                    
+                                    // Determine file type from MIME type
+                                    if (strpos($mime, 'pdf') !== false) {
+                                        $fileTypeDisplay = 'PDF Document';
+                                    } elseif (strpos($mime, 'word') !== false || strpos($mime, 'document') !== false || in_array($ext, ['doc', 'docx'])) {
+                                        $fileTypeDisplay = 'Word Document';
+                                    } elseif (strpos($mime, 'spreadsheet') !== false || strpos($mime, 'excel') !== false || in_array($ext, ['xls', 'xlsx'])) {
+                                        $fileTypeDisplay = 'Spreadsheet';
+                                    } elseif (strpos($mime, 'image') !== false || in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'bmp'])) {
+                                        $fileTypeDisplay = 'Image File';
+                                    } elseif (strpos($mime, 'zip') !== false || strpos($mime, 'compressed') !== false || in_array($ext, ['zip', 'rar', '7z'])) {
+                                        $fileTypeDisplay = 'Archive';
+                                    } elseif (strpos($mime, 'text') !== false || in_array($ext, ['txt', 'log'])) {
+                                        $fileTypeDisplay = 'Text File';
+                                    } elseif (strpos($mime, 'executable') !== false || strpos($mime, 'x-msdownload') !== false || $ext === 'exe') {
+                                        $fileTypeDisplay = 'Executable';
+                                    } elseif ($ext) {
+                                        $fileTypeDisplay = strtoupper($ext) . ' File';
                                     }
                                 }
                             @endphp
-                            <span class="type-badge file_hash">
-                                {{ $fileType }}
+                            <span class="type-badge file_hash" title="MIME: {{ $attachment?->file_type ?? 'N/A' }}">
+                                {{ $fileTypeDisplay }}
                             </span>
                         @else
                             <span class="type-badge {{ $threat->type }}">
