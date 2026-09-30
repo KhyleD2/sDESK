@@ -139,5 +139,41 @@ Route::middleware('auth')->group(function () {
         Route::put('/report-queue/{report}', [ReportQueueController::class, 'update'])->name('report-queue.update');
         Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs');
         Route::get('/known-threats', [KnownThreatController::class, 'index'])->name('known-threats');
+        
+        // Diagnostic route for debugging resolution time
+        Route::get('/debug/resolution-time', function () {
+            $reports = \App\Models\ThreatReport::select('id', 'status', 'created_at', 'updated_at')
+                ->orderBy('id', 'desc')
+                ->get()
+                ->map(function($report) {
+                    $hours = null;
+                    $days = null;
+                    if ($report->created_at && $report->updated_at) {
+                        $hours = $report->created_at->diffInHours($report->updated_at);
+                        $days = round($hours / 24, 2);
+                    }
+                    return [
+                        'id' => $report->id,
+                        'status' => $report->status,
+                        'created_at' => $report->created_at?->toDateTimeString(),
+                        'updated_at' => $report->updated_at?->toDateTimeString(),
+                        'hours_diff' => $hours,
+                        'days_diff' => $days
+                    ];
+                });
+            
+            $resolvedCount = \App\Models\ThreatReport::where('status', 'resolved')->count();
+            
+            $avgResolution = \App\Models\ThreatReport::where('status', 'resolved')
+                ->whereNotNull('updated_at')
+                ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at) / 24.0) as avg_days')
+                ->value('avg_days');
+            
+            return response()->json([
+                'resolved_count' => $resolvedCount,
+                'avg_resolution_days' => $avgResolution ? round($avgResolution, 2) : null,
+                'all_reports' => $reports
+            ], 200, [], JSON_PRETTY_PRINT);
+        })->name('debug.resolution-time');
     });
 });
