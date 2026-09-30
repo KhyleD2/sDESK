@@ -563,9 +563,9 @@
                             @php
                                 $attachment = $threat->attachment();
                             @endphp
-                            @if($attachment && \Storage::disk('local')->exists('attachments/' . $attachment->file_path))
+                            @if($attachment && \Storage::disk('local')->exists('threat_attachments/' . $attachment->stored_filename))
                                 <a href="{{ route('attachments.download', $attachment->id) }}" class="view-file-btn" style="margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--cyan-dim); border: 1px solid var(--cyan); border-radius: 6px; color: var(--cyan); font-size: 12px; font-weight: 600; text-decoration: none; transition: all 0.2s;">
-                                    <i class="fas fa-eye"></i> View/Download File ({{ $attachment->original_filename }})
+                                    <i class="fas fa-download"></i> Download File: {{ $attachment->original_filename }}
                                 </a>
                             @elseif($attachment)
                                 <div style="margin-top: 8px; padding: 6px 12px; background: var(--line-soft); border-radius: 6px; color: var(--text-dim); font-size: 11px;">
@@ -575,9 +575,40 @@
                         @endif
                     </td>
                     <td>
-                        <span class="type-badge {{ $threat->type }}">
-                            {{ ucfirst(str_replace('_', ' ', $threat->type)) }}
-                        </span>
+                        @if($threat->type === 'file_hash')
+                            @php
+                                $attachment = $threat->attachment();
+                                $fileType = 'File Hash';
+                                if ($attachment) {
+                                    // Get friendly file type from mime type
+                                    $mime = $attachment->file_type;
+                                    if (str_contains($mime, 'pdf')) {
+                                        $fileType = 'PDF Document';
+                                    } elseif (str_contains($mime, 'word') || str_contains($mime, 'document')) {
+                                        $fileType = 'Word Document';
+                                    } elseif (str_contains($mime, 'spreadsheet') || str_contains($mime, 'excel')) {
+                                        $fileType = 'Spreadsheet';
+                                    } elseif (str_contains($mime, 'image')) {
+                                        $fileType = 'Image File';
+                                    } elseif (str_contains($mime, 'zip') || str_contains($mime, 'compressed')) {
+                                        $fileType = 'Archive File';
+                                    } elseif (str_contains($mime, 'text')) {
+                                        $fileType = 'Text File';
+                                    } elseif (str_contains($mime, 'executable') || str_contains($mime, 'application/x-msdownload')) {
+                                        $fileType = 'Executable';
+                                    } else {
+                                        $fileType = 'File (' . pathinfo($attachment->original_filename, PATHINFO_EXTENSION) . ')';
+                                    }
+                                }
+                            @endphp
+                            <span class="type-badge file_hash">
+                                {{ $fileType }}
+                            </span>
+                        @else
+                            <span class="type-badge {{ $threat->type }}">
+                                {{ ucfirst(str_replace('_', ' ', $threat->type)) }}
+                            </span>
+                        @endif
                     </td>
                     <td>
                         <strong style="color: var(--text); font-size: 16px;">{{ $threat->times_reported }}</strong>
