@@ -13,6 +13,13 @@ class AnalyticsController extends Controller
     public function index()
     {
         try {
+            // Debug: Log all reports with their status and timestamps
+            $allReports = ThreatReport::select('id', 'status', 'created_at', 'updated_at')
+                ->orderBy('id', 'desc')
+                ->limit(10)
+                ->get();
+            \Log::info("Analytics Debug - Last 10 Reports: " . $allReports->toJson());
+            
             // 1. Reports by Category
             $reportsByCategory = ThreatReport::join('threat_categories', 'threat_reports.category_id', '=', 'threat_categories.id')
                 ->select('threat_categories.name', DB::raw('count(*) as total'))
@@ -55,46 +62,56 @@ class AnalyticsController extends Controller
             ->get();
 
         // 5. Resolution Time Trend (average days to resolve, last 12 weeks)
-        $weeksAgo = 12;
-        $endWeek = now();
-        $startWeek = now()->subWeeks($weeksAgo - 1);
+        $weeksAgo = 8; // Changed to 8 weeks to match the subtitle
         
         // Debug: Check resolved reports in the last 12 weeks
         $recentResolvedCount = ThreatReport::where('status', 'resolved')
-            ->where('created_at', '>=', $startWeek)
+            ->where('created_at', '>=', now()->subWeeks($weeksAgo))
             ->count();
-        \Log::info("Analytics Debug - Resolved Reports (last 12 weeks): {$recentResolvedCount}");
+        \Log::info("Analytics Debug - Resolved Reports (last {$weeksAgo} weeks): {$recentResolvedCount}");
         
-        // Get actual resolution time data (using hours for precision)
-        $actualResolutionData = ThreatReport::whereNotNull('updated_at')
-            ->where('status', 'resolved')
-            ->where('created_at', '>=', $startWeek)
-            ->select(
-                DB::raw('YEARWEEK(created_at, 3) as week_key'),
-                DB::raw('DATE(created_at - INTERVAL (WEEKDAY(created_at)) DAY) as week_start'),
-                DB::raw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at) / 24.0) as avg_days')
-            )
-            ->groupBy('week_key', 'week_start')
-            ->orderBy('week_key')
-            ->get()
-            ->keyBy('week_key');
+        // Simplified approach: Get all resolved reports and group by week in PHP
+        $resolvedReportsForTrend = ThreatReport::where('status', 'resolved')
+            ->whereNotNull('updated_at')
+            ->where('created_at', '>=', now()->subWeeks($weeksAgo))
+            ->select('id', 'created_at', 'updated_at',
+                DB::raw('TIMESTAMPDIFF(HOUR, created_at, updated_at) / 24.0 as days_to_resolve'))
+            ->get();
         
-        \Log::info("Analytics Debug - Resolution Data: " . $actualResolutionData->toJson());
+        \Log::info("Analytics Debug - Resolution Trend Data: " . $resolvedReportsForTrend->toJson());
         
-        // Generate all 12 weeks and fill with 0 for missing data
+        // Group by week and calculate averages
+        $weeklyData = [];
+        foreach ($resolvedReportsForTrend as $report) {
+            $weekStart = $report->created_at->startOfWeek()->format('M j');
+            if (!isset($weeklyData[$weekStart])) {
+                $weeklyData[$weekStart] = [
+                    'sum' => 0,
+                    'count' => 0
+                ];
+            }
+            $weeklyData[$weekStart]['sum'] += (float) $report->days_to_resolve;
+            $weeklyData[$weekStart]['count']++;
+        }
+        
+        // Generate all weeks and fill with data or 0
         $resolutionTimeTrend = collect();
         for ($i = $weeksAgo - 1; $i >= 0; $i--) {
             $weekStart = now()->subWeeks($i)->startOfWeek();
-            $weekKey = $weekStart->format('oW'); // ISO week format
-            $weekLabel = $weekStart->format('M j'); // e.g., "Aug 19"
+            $weekLabel = $weekStart->format('M j');
+            
+            $avgDays = 0;
+            if (isset($weeklyData[$weekLabel]) && $weeklyData[$weekLabel]['count'] > 0) {
+                $avgDays = round($weeklyData[$weekLabel]['sum'] / $weeklyData[$weekLabel]['count'], 2);
+            }
             
             $resolutionTimeTrend->push([
                 'week' => $weekLabel,
-                'avg_days' => $actualResolutionData->has($weekKey) 
-                    ? round((float) $actualResolutionData->get($weekKey)->avg_days, 2) 
-                    : 0
+                'avg_days' => $avgDays
             ]);
         }
+        
+        \Log::info("Analytics Debug - Final Resolution Trend: " . $resolutionTimeTrend->toJson());
 
         // 6. Top Reported Indicators
         $topIndicators = \App\Models\KnownThreat::orderByDesc('times_reported')
@@ -114,6 +131,14 @@ class AnalyticsController extends Controller
         // Debug: Check how many resolved reports we have
         $resolvedCount = ThreatReport::where('status', 'resolved')->count();
         \Log::info("Analytics Debug - Resolved Reports Count: {$resolvedCount}");
+        
+        // Get resolved reports with timestamps for debugging
+        $resolvedReports = ThreatReport::where('status', 'resolved')
+            ->select('id', 'created_at', 'updated_at', 
+                DB::raw('TIMESTAMPDIFF(HOUR, created_at, updated_at) as hours_diff'),
+                DB::raw('TIMESTAMPDIFF(HOUR, created_at, updated_at) / 24.0 as days_diff'))
+            ->get();
+        \Log::info("Analytics Debug - Resolved Reports Details: " . $resolvedReports->toJson());
         
         $avgResolutionTime = ThreatReport::where('status', 'resolved')
             ->whereNotNull('updated_at')
