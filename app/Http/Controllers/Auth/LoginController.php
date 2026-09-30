@@ -164,13 +164,16 @@ class LoginController extends Controller
         $email = session('2fa_email');
         
         if (!$email) {
-            return back()->withErrors(['code' => 'Session expired. Please login again.']);
+            // Session expired, redirect to login
+            $request->session()->flush();
+            return redirect()->route('login')->withErrors(['code' => 'Session expired. Please login again.']);
         }
 
         $user = \App\Models\User::where('email', $email)->first();
 
         if (!$user) {
-            return back()->withErrors(['code' => 'User not found.']);
+            $request->session()->flush();
+            return redirect()->route('login')->withErrors(['code' => 'User not found.']);
         }
 
         // Check if code matches and hasn't expired
@@ -179,6 +182,9 @@ class LoginController extends Controller
         }
 
         if ($user->two_factor_expires_at < now()) {
+            $user->two_factor_code = null;
+            $user->two_factor_expires_at = null;
+            $user->save();
             return back()->withErrors(['code' => 'Verification code has expired. Please login again.']);
         }
 
@@ -187,25 +193,36 @@ class LoginController extends Controller
         $user->two_factor_expires_at = null;
         
         // Handle "Trust this device" option
-        $response = redirect()->intended(route('dashboard'))->with('success', 'Login successful!');
-        
         if ($request->boolean('trust_device')) {
             $deviceToken = Str::random(60);
             $user->trusted_device_token = $deviceToken;
             $user->trusted_device_expires_at = now()->addDays(7);
-            
-            // Set cookie for 7 days (minutes * hours * days)
-            $response->withCookie(cookie('trusted_device', $deviceToken, 60 * 24 * 7, '/', null, false, true));
+            $user->save();
+        } else {
+            $user->save();
         }
-        
-        $user->save();
+
+        // Clear any existing sessions for this user to prevent conflicts
+        \DB::table('sessions')
+            ->where('user_id', $user->id)
+            ->delete();
 
         // Log the user in
         Auth::login($user, session('2fa_remember', false));
         
-        // Clear session data and regenerate to prevent conflicts
+        // Clear 2FA session data
         $request->session()->forget(['2fa_email', '2fa_remember']);
+        
+        // Regenerate session ID to prevent session fixation
         $request->session()->regenerate();
+
+        // Prepare response
+        $response = redirect()->intended(route('dashboard'))->with('success', 'Login successful!');
+        
+        // Set trusted device cookie if needed
+        if ($request->boolean('trust_device')) {
+            $response->withCookie(cookie('trusted_device', $user->trusted_device_token, 60 * 24 * 7, '/', null, false, true));
+        }
 
         return $response;
     }
