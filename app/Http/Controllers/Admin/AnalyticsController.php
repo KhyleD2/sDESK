@@ -59,14 +59,14 @@ class AnalyticsController extends Controller
         $endWeek = now();
         $startWeek = now()->subWeeks($weeksAgo - 1);
         
-        // Get actual resolution time data
+        // Get actual resolution time data (using hours for precision)
         $actualResolutionData = ThreatReport::whereNotNull('updated_at')
             ->where('status', 'resolved')
             ->where('created_at', '>=', $startWeek)
             ->select(
                 DB::raw('YEARWEEK(created_at, 3) as week_key'),
                 DB::raw('DATE(created_at - INTERVAL (WEEKDAY(created_at)) DAY) as week_start'),
-                DB::raw('AVG(DATEDIFF(updated_at, created_at)) as avg_days')
+                DB::raw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at) / 24.0) as avg_days')
             )
             ->groupBy('week_key', 'week_start')
             ->orderBy('week_key')
@@ -83,7 +83,7 @@ class AnalyticsController extends Controller
             $resolutionTimeTrend->push([
                 'week' => $weekLabel,
                 'avg_days' => $actualResolutionData->has($weekKey) 
-                    ? (float) $actualResolutionData->get($weekKey)->avg_days 
+                    ? round((float) $actualResolutionData->get($weekKey)->avg_days, 2) 
                     : 0
             ]);
         }
@@ -104,8 +104,11 @@ class AnalyticsController extends Controller
         $falsePositives = ThreatReport::where('verdict', 'false_positive')->count();
         $avgResolutionTime = ThreatReport::where('status', 'resolved')
             ->whereNotNull('updated_at')
-            ->selectRaw('AVG(DATEDIFF(updated_at, created_at)) as avg_days')
+            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at) / 24.0) as avg_days')
             ->value('avg_days');
+        
+        // Round to 2 decimal places
+        $avgResolutionTime = $avgResolutionTime ? round($avgResolutionTime, 2) : null;
 
         // Prepare data for Chart.js (encode as JSON)
         $analyticsData = [
